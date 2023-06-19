@@ -1,6 +1,6 @@
 % Impementation of the ODE Model from Santurio and Barros
 
-size = 120;
+nmax = 120;
 
 % k_?
 % Parameters (from supplementary table 1)
@@ -18,58 +18,48 @@ psi_g = 2.571e-14; % Competition coefficient between tumor cells and glial cells
 gamma_g = 2.5e-10; % Killing efficiency from the CAR-T cells against glial cells
 
 % Initial conditions
-c = zeros(size,1, 'double'); c(1) = 5e8;
-t = zeros(size,1, 'double'); t(1) = 0.1*k;
-h = zeros(size,1, 'double'); h(1) = 0.1*t(1);
-g = zeros(size,1, 'double'); g(1) = k-h(1);
-n = zeros(size,1, 'double'); n(1) = k-t(1);
-k_ = g(1); %k*0.4; % Carrying capacity of antigen-positive glial population
+c0 = 5e8;
+t0 = 0.1*k;
+h0 = 0.1*t0;
+g0 = k-h0;
+n0 = k-t0;
+k_ = 1.1*g0; %k*0.4; % Carrying capacity of antigen-positive glial population
 
-% Formulas/Equations (G_ is H)
-c_f = @(t_0) (p_C*(t(t_0)+h(t_0)/g_T+(t(t_0)+h(t_0)))) - alpha*(c(t_0))*t(t_0) - 1/tau_C * c(t_0);
-t_f = @(t_0) omega_T*t(t_0)* (1-t(t_0)/k) - psi_T * (g(t_0)+h(t_0))*t(t_0) - gamma_T*t(t_0)*c(t_0);
-h_f = @(t_0) omega_G*h(t_0)*(1-h(t_0)/k_)-psi_g*h(t_0)*t(t_0) - gamma_g * h(t_0) * c(t_0);
-g_f = @(t_0) omega_G*g(t_0)*(1-g(t_0)/k-k_)-psi_g*g(t_0)*t(t_0);
-n_f = @(t_0) exp(1)*psi*heaviside(g(t_0)+h(t_0)); % Heaviside requires symbolic maths toolbox
+y0 = [c0 t0 h0 g0 n0];   
+t = linspace(0,1,nmax)';
 
-% Calculations
-for i=2:size
-    c(i) = c_f(i-1);
-    t(i) = t_f(i-1);
-    h(i) = h_f(i-1);
-    g(i) = g_f(i-1);
-    n(i) = n_f(i-1);
+% Runge-Kutta 4th-Order Algorithm
+y_Kutta = zeros(nmax, 5);
+y_Kutta(1, :) = y0;
+h = t(2)-t(1);  % Constant time step
+modelfcn = @(t,y) (odefcn(t, y, p_C, g_T, tau_C, alpha, omega_T, k, k_, psi_T, gamma_T, omega_G, psi, psi_g, gamma_g));
+
+for i = 2:length(t)
+    k1 = modelfcn(t(i-1), y_Kutta(i-1, :));
+    k2 = modelfcn(t(i-1)+h/2, y_Kutta(i-1, :)+k1*h/2);
+    k3 = modelfcn(t(i-1)+h/2, y_Kutta(i-1, :)+k2*h/2);
+    k4 = modelfcn(t(i-1)+h, y_Kutta(i-1, :)+k3*h);
+    y_Kutta(i, :) = y_Kutta(i-1, :)+((k1/6+k2/3+k3/3+k4/6)*h).';
 end
 
+[t,y_check] = ode45(modelfcn,t,y0);
 
-% Plot all populations
 ax = tiledlayout(3,2);
 xlabel(ax, "Time (days)")
 ylabel(ax, "Cell number")
 ax1 = nexttile;
-plot(c);
+plot(y_Kutta(1,:));
 title(ax1,"CAR-T Cells")
 ax1 = nexttile;
-plot(t);
+plot(y_Kutta(2,:));
 title(ax1,"Glioblastoma Cells")
 ax1 = nexttile;
-plot(h);
+plot(y_Kutta(3,:));
 title(ax1,"Glial Cells with Antigen")
 ax1 = nexttile;
-plot(g);
+plot(y_Kutta(4,:));
 title(ax1,"Glial Cells without Antigen")
 ax1 = nexttile;
-plot(n);
+plot(y_Kutta(5,:));
 title(ax1,"Neurons")
-
-
-
-
-
-
-
-
-
-
-
 
