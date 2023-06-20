@@ -1,7 +1,6 @@
 % Impementation of the ODE Model from Santurio and Barros
 
 nmax = 120;
-
 % k_?
 % Parameters (from supplementary table 1)
 p_C = 0.9; % CAR-T cell proliferation rate
@@ -23,43 +22,33 @@ t0 = 0.1*k;
 h0 = 0.1*t0;
 g0 = k-h0;
 n0 = k-t0;
-k_ = 1.1*g0; %k*0.4; % Carrying capacity of antigen-positive glial population
+k_ = 0.2*g0; %k*0.4; % Carrying capacity of antigen-positive glial population
 
 y0 = [c0 t0 h0 g0 n0];   
-t = linspace(0,1,nmax)';
-
 % Runge-Kutta 4th-Order Algorithm
-y_Kutta = zeros(nmax, 5);
-y_Kutta(1, :) = y0;
-h = t(2)-t(1);  % Constant time step
-modelfcn = @(t,y) (odefcn(t, y, p_C, g_T, tau_C, alpha, omega_T, k, k_, psi_T, gamma_T, omega_G, psi, psi_g, gamma_g));
+y = zeros(nmax, 5);
+y(1, :) = y0;
+modelfcn = @(t,y) (odefcn(t, y, p_C, g_T, tau_C, alpha, omega_T, k, k_, psi_T, gamma_T, omega_G, psi, psi_g, gamma_g, h));
 
-for i = 2:length(t)
-    k1 = modelfcn(t(i-1), y_Kutta(i-1, :));
-    k2 = modelfcn(t(i-1)+h/2, y_Kutta(i-1, :)+k1*h/2);
-    k3 = modelfcn(t(i-1)+h/2, y_Kutta(i-1, :)+k2*h/2);
-    k4 = modelfcn(t(i-1)+h, y_Kutta(i-1, :)+k3*h);
-    y_Kutta(i, :) = y_Kutta(i-1, :)+((k1/6+k2/3+k3/3+k4/6)*h).';
-end
-
-[t,y_check] = ode45(modelfcn,t,y0);
+[t,y] = ode45(modelfcn,[0 nmax],y0);
 
 ax = tiledlayout(3,2);
+title("Solution with build-in matlab-ODE function")
 xlabel(ax, "Time (days)")
 ylabel(ax, "Cell number")
 ax1 = nexttile;
-plot(y_Kutta(1,:));
+plot(y(:,1));
 title(ax1,"CAR-T Cells")
 ax1 = nexttile;
-plot(y_Kutta(2,:));
+plot(y(:,2));
 title(ax1,"Glioblastoma Cells")
 ax1 = nexttile;
-plot(y_Kutta(3,:));
+plot(y(:,3));
 title(ax1,"Glial Cells with Antigen")
 ax1 = nexttile;
-plot(y_Kutta(4,:));
+plot(y(:,4));
 title(ax1,"Glial Cells without Antigen")
 ax1 = nexttile;
-plot(y_Kutta(5,:));
+plot(y(:,5));
 title(ax1,"Neurons")
 
