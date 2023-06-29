@@ -14,5 +14,4 @@
 [odefcn.m](https://github.com/LuYuxiaoPKU/MMLS-class-project/blob/main/odefcn.m) : Model; there are the equations 1-5 in the Paper implemented to be used in a numerical approximation procedure. 
 
 ## Report 
-https://www.overleaf.com/7799468947krwhhbkhngrk
-
+[Here](https://www.overleaf.com/6132218314rxwhggzbkctg)
